@@ -1,0 +1,128 @@
+import pandas as pd
+
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import (
+    Embedding,
+    LSTM,
+    Dense,
+    Dropout
+)
+
+from tensorflow.keras.utils import to_categorical
+
+# =====================================================
+# LOAD DATA
+# =====================================================
+
+train_df = pd.read_csv("train.csv")
+
+# =====================================================
+# TEXT + TARGET
+# =====================================================
+
+X = train_df["text"]
+
+y = train_df["target"]
+
+# =====================================================
+# LABEL ENCODING
+# =====================================================
+
+encoder = LabelEncoder()
+
+y_encoded = encoder.fit_transform(y)
+
+y_categorical = to_categorical(y_encoded)
+
+# =====================================================
+# SPLIT
+# =====================================================
+
+X_train, X_val, y_train, y_val = train_test_split(
+    X,
+    y_categorical,
+    test_size=0.2,
+    random_state=42
+)
+
+# =====================================================
+# TOKENIZATION
+# =====================================================
+
+tokenizer = Tokenizer(
+    num_words=20000,
+    oov_token="<OOV>"
+)
+
+tokenizer.fit_on_texts(X_train)
+
+X_train_seq = tokenizer.texts_to_sequences(X_train)
+
+X_val_seq = tokenizer.texts_to_sequences(X_val)
+
+# =====================================================
+# PADDING
+# =====================================================
+
+max_len = 150
+
+X_train_pad = pad_sequences(X_train_seq, maxlen=max_len)
+
+X_val_pad = pad_sequences(X_val_seq, maxlen=max_len)
+
+# =====================================================
+# LSTM MODEL
+# =====================================================
+
+model = Sequential()
+
+model.add(
+    Embedding(
+        input_dim=20000,
+        output_dim=128,
+        input_length=max_len
+    )
+)
+
+model.add(
+    LSTM(128)
+)
+
+model.add(Dropout(0.5))
+
+model.add(Dense(64, activation='relu'))
+
+model.add(
+    Dense(
+        y_categorical.shape[1],
+        activation='softmax'
+    )
+)
+
+# =====================================================
+# COMPILE
+# =====================================================
+
+model.compile(
+    optimizer='adam',
+    loss='categorical_crossentropy',
+    metrics=['accuracy']
+)
+
+# =====================================================
+# TRAIN
+# =====================================================
+
+model.fit(
+    X_train_pad,
+    y_train,
+    epochs=5,
+    batch_size=32,
+    validation_data=(X_val_pad, y_val)
+)
