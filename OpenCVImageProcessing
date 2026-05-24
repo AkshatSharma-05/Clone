@@ -1,0 +1,67 @@
+import cv2
+import numpy as np
+
+# =====================================================
+# LOAD IMAGE
+# =====================================================
+
+image = cv2.imread(
+    "input.jpg",
+    cv2.IMREAD_GRAYSCALE
+)
+
+# =====================================================
+# KERNEL
+# =====================================================
+
+kernel = np.ones((3,3), np.uint8)
+
+# =====================================================
+# IMAGE PROCESSING PIPELINE
+# =====================================================
+
+# Dilation
+dilated = cv2.dilate(
+    image,
+    kernel,
+    iterations=1
+)
+
+# Morphological Closing
+closed = cv2.morphologyEx(
+    dilated,
+    cv2.MORPH_CLOSE,
+    kernel
+)
+
+# Median Blur
+blurred = cv2.medianBlur(
+    closed,
+    5
+)
+
+# Edge Detection
+edges = cv2.Canny(
+    blurred,
+    100,
+    200
+)
+
+# Horizontal Flip
+flipped = cv2.flip(
+    edges,
+    1
+)
+
+# =====================================================
+# SAVE OUTPUT
+# =====================================================
+
+np.savetxt(
+    "submission.txt",
+    flipped,
+    fmt='%d',
+    delimiter=','
+)
+
+print("submission.txt created successfully!")
