@@ -1,0 +1,490 @@
+1. TF-IDF / ML Text Classification Variations
+
+Your base pipeline:
+
+Text → TF-IDF → Logistic Regression
+
+Most questions modify:
+
+vectorizer
+model
+preprocessing
+metrics
+balancing
+hyperparameters
+A. Replace Logistic Regression
+Naive Bayes
+
+Replace:
+
+from sklearn.linear_model import LogisticRegression
+
+with:
+
+from sklearn.naive_bayes import MultinomialNB
+
+Replace:
+
+("clf", LogisticRegression(max_iter=1000))
+
+with:
+
+("clf", MultinomialNB())
+SVM
+
+Replace imports:
+
+from sklearn.svm import LinearSVC
+
+Replace classifier:
+
+("clf", LinearSVC())
+Random Forest
+
+Replace imports:
+
+from sklearn.ensemble import RandomForestClassifier
+
+Replace classifier:
+
+("clf", RandomForestClassifier())
+XGBoost
+
+Replace imports:
+
+from xgboost import XGBClassifier
+
+Replace classifier:
+
+("clf", XGBClassifier())
+
+Binary classification preferred.
+
+B. Replace TF-IDF Vectorizer
+Count Vectorizer
+
+Replace:
+
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+with:
+
+from sklearn.feature_extraction.text import CountVectorizer
+
+Replace:
+
+("tfidf", TfidfVectorizer())
+
+with:
+
+("bow", CountVectorizer())
+Hashing Vectorizer
+from sklearn.feature_extraction.text import HashingVectorizer
+("hash", HashingVectorizer())
+C. Add N-Grams
+
+Replace:
+
+TfidfVectorizer()
+
+with:
+
+TfidfVectorizer(
+    ngram_range=(1,2)
+)
+
+Trigrams:
+
+ngram_range=(1,3)
+D. Add Text Cleaning
+
+Add:
+
+import re
+
+Add function:
+
+def clean_text(text):
+
+    text = text.lower()
+
+    text = re.sub(r'[^a-zA-Z ]', '', text)
+
+    return text
+
+Apply:
+
+train_df["text"] = train_df["text"].apply(clean_text)
+
+test_df["text"] = test_df["text"].apply(clean_text)
+E. Stemming
+
+Add:
+
+from nltk.stem import PorterStemmer
+
+Inside clean function:
+
+stemmer = PorterStemmer()
+
+text = " ".join(
+    stemmer.stem(word)
+    for word in text.split()
+)
+F. Lemmatization
+from nltk.stem import WordNetLemmatizer
+G. Handle Class Imbalance
+
+Replace:
+
+LogisticRegression(max_iter=1000)
+
+with:
+
+LogisticRegression(
+    max_iter=1000,
+    class_weight='balanced'
+)
+H. Add Validation Metrics
+
+Add imports:
+
+from sklearn.metrics import (
+    accuracy_score,
+    f1_score
+)
+
+Add:
+
+macro_f1 = f1_score(
+    y_val,
+    pred,
+    average='macro'
+)
+I. Binary Classification Instead of Multiclass
+
+Minimal change:
+
+y = train_df["target"]
+
+No other major changes needed.
+
+J. Use More Columns
+
+Replace:
+
+train_df["text"] = train_df["review"]
+
+with:
+
+train_df["text"] = (
+    train_df["title"].astype(str) + " " +
+    train_df["review"].astype(str)
+)
+2. CNN Variations
+
+Base:
+
+Embedding → Conv1D → Pooling → Dense
+A. Replace CNN with LSTM
+
+Remove:
+
+Conv1D(...)
+GlobalMaxPooling1D()
+
+Add:
+
+from tensorflow.keras.layers import LSTM
+
+Then:
+
+model.add(LSTM(128))
+B. Replace LSTM with GRU
+
+Import:
+
+from tensorflow.keras.layers import GRU
+
+Replace:
+
+LSTM(128)
+
+with:
+
+GRU(128)
+C. Bidirectional LSTM
+
+Import:
+
+from tensorflow.keras.layers import Bidirectional
+
+Replace:
+
+model.add(LSTM(128))
+
+with:
+
+model.add(
+    Bidirectional(
+        LSTM(128)
+    )
+)
+D. Change Optimizer
+
+Replace:
+
+optimizer='adam'
+
+with:
+
+RMSprop
+optimizer='rmsprop'
+SGD
+optimizer='sgd'
+Adamax
+optimizer='adamax'
+E. Binary Classification
+
+Replace output layer:
+
+Dense(num_classes, activation='softmax')
+
+with:
+
+Dense(1, activation='sigmoid')
+
+Replace loss:
+
+loss='categorical_crossentropy'
+
+with:
+
+loss='binary_crossentropy'
+
+Remove:
+
+to_categorical()
+F. Add Dropout
+
+Add:
+
+Dropout(0.5)
+
+between layers.
+
+G. Add EarlyStopping
+
+Import:
+
+from tensorflow.keras.callbacks import EarlyStopping
+
+Add:
+
+early_stop = EarlyStopping(
+    patience=2,
+    restore_best_weights=True
+)
+
+Fit:
+
+callbacks=[early_stop]
+H. Change Sequence Length
+
+Replace:
+
+max_len = 150
+
+with:
+
+max_len = 300
+I. Change Embedding Dimension
+
+Replace:
+
+output_dim=128
+
+with:
+
+output_dim=300
+J. Add More CNN Layers
+
+Add:
+
+model.add(
+    Conv1D(
+        64,
+        3,
+        activation='relu'
+    )
+)
+
+before pooling.
+
+3. OpenCV Variations
+
+Base:
+
+Load → Morphology → Blur → Edge → Save
+A. Replace Dilation with Erosion
+
+Replace:
+
+cv2.dilate()
+
+with:
+
+cv2.erode()
+B. Replace Morphological Operation
+Opening
+cv2.MORPH_OPEN
+Gradient
+cv2.MORPH_GRADIENT
+TopHat
+cv2.MORPH_TOPHAT
+C. Replace Median Blur
+Gaussian Blur
+
+Replace:
+
+cv2.medianBlur(image, 5)
+
+with:
+
+cv2.GaussianBlur(
+    image,
+    (5,5),
+    0
+)
+Average Blur
+cv2.blur(
+    image,
+    (5,5)
+)
+D. Replace Edge Detection
+Sobel
+cv2.Sobel(
+    image,
+    cv2.CV_64F,
+    1,
+    0,
+    ksize=3
+)
+Laplacian
+cv2.Laplacian(
+    image,
+    cv2.CV_64F
+)
+E. Change Flip
+Vertical
+cv2.flip(image, 0)
+Both Axes
+cv2.flip(image, -1)
+F. Rotation
+cv2.rotate(
+    image,
+    cv2.ROTATE_90_CLOCKWISE
+)
+G. Thresholding
+
+Add:
+
+_, thresh = cv2.threshold(
+    image,
+    127,
+    255,
+    cv2.THRESH_BINARY
+)
+H. Adaptive Threshold
+cv2.adaptiveThreshold(
+    image,
+    255,
+    cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+    cv2.THRESH_BINARY,
+    11,
+    2
+)
+I. Color Image
+
+Replace:
+
+cv2.IMREAD_GRAYSCALE
+
+with:
+
+cv2.IMREAD_COLOR
+J. Resize
+image = cv2.resize(
+    image,
+    (256,256)
+)
+4. Generic Text Processing Variations
+A. Tokenization
+tokens = text.split()
+
+NLTK:
+
+from nltk.tokenize import word_tokenize
+B. Remove Stopwords
+from nltk.corpus import stopwords
+C. POS Tagging
+from nltk import pos_tag
+D. Named Entity Recognition
+import spacy
+E. Sentiment Analysis
+from textblob import TextBlob
+F. Word2Vec
+from gensim.models import Word2Vec
+G. TF-IDF to Embeddings
+
+Replace:
+
+TfidfVectorizer()
+
+with:
+
+Word2Vec
+FastText
+BERT embeddings
+H. BERT Model
+
+Import:
+
+from transformers import BertTokenizer
+from transformers import TFBertModel
+
+Major architecture changes.
+
+MOST COMMON EXAM/CONTEST MODIFICATIONS
+
+Usually they ask:
+
+Asked Change	Minimal Code Change
+Use Naive Bayes	Replace classifier
+Use SVM	Replace classifier
+Use LSTM	Replace Conv1D
+Use GRU	Replace LSTM
+Use bigrams	ngram_range=(1,2)
+Use sigmoid	Change output layer
+Binary classification	sigmoid + binary_crossentropy
+Add stemming	modify clean function
+Add dropout	insert Dropout layer
+Use Gaussian blur	replace medianBlur
+Use erosion	replace dilate
+Use adaptive threshold	add adaptiveThreshold
+Use RGB image	IMREAD_COLOR
+Compute F1	add sklearn metrics
+Use Adam optimizer	optimizer='adam'
+Use SGD	optimizer='sgd'
+Add early stopping	callbacks
+Resize image	cv2.resize
+Rotate image	cv2.rotate
+Biggest Pattern To Understand
+
+Almost all such questions are:
+
+Base pipeline
++
+small architectural modification
++
+parameter change
