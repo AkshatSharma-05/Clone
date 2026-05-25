@@ -1,0 +1,798 @@
+I’ll rebuild these notes into an actual study flow. The notes are mixing concepts without structure, so I’ll organize them the way they are typically taught in NLP and Deep Learning.
+
+Source notes: 
+
+# Big Picture First
+
+This entire topic follows this progression:
+
+1. Traditional text representation → TF-IDF
+2. Word meaning representation → Word Embeddings
+3. Static embeddings → Word2Vec / GloVe
+4. Limited context problem → Window-based models
+5. Sequential memory requirement → RNN
+6. RNN limitations → LSTM / GRU
+
+If you understand *why* each next model was created, the whole topic becomes easy.
+
+---
+
+# PART 1 — Why TF-IDF Was Not Enough
+
+Traditional NLP used methods like:
+
+* Bag of Words
+* TF-IDF
+
+These methods treat words as independent tokens.
+
+Example:
+
+Sentence 1:
+
+> I love cars
+
+Sentence 2:
+
+> I love automobiles
+
+TF-IDF sees:
+
+* "car"
+* "automobile"
+
+as completely different words.
+
+But humans know:
+
+* car ≈ automobile
+
+Similarly:
+
+* happy ≈ joyful
+* mobile ≈ smartphone
+
+So TF-IDF has a major weakness:
+
+## Problem of TF-IDF
+
+It understands frequency, not meaning.
+
+This created the need for:
+
+# Word Embeddings
+
+---
+
+# PART 2 — Word Embeddings
+
+## Definition
+
+A word embedding is:
+
+> A dense numerical vector representation of a word that captures semantic meaning.
+
+Instead of representing words as IDs or sparse vectors, we represent them as learned numerical vectors.
+
+Example:
+
+| Word  | Vector                   |
+| ----- | ------------------------ |
+| king  | [0.21, -0.91, 0.44, ...] |
+| queen | [0.19, -0.88, 0.48, ...] |
+
+Important idea:
+
+* Similar meaning → vectors close together
+* Different meaning → vectors far apart
+
+---
+
+# Sparse vs Dense Representation
+
+## Sparse Matrix
+
+Mostly zeros.
+
+Example:
+
+```text
+car  = [0,0,1,0,0,0]
+bike = [0,1,0,0,0,0]
+```
+
+Problems:
+
+* Huge memory usage
+* No semantic meaning
+* Inefficient
+
+---
+
+## Dense Matrix
+
+Mostly meaningful values.
+
+Example:
+
+```text
+car = [0.82, 0.11, -0.45]
+bike = [0.79, 0.09, -0.40]
+```
+
+Now:
+
+* Similar words get similar vectors
+
+---
+
+# PART 3 — Word2Vec
+
+## What is Word2Vec?
+
+Word2Vec is an NLP technique developed by Google in 2013.
+
+It converts words into dense vectors while preserving semantic relationships.
+
+---
+
+# Core Idea of Word2Vec
+
+Words appearing in similar contexts have similar meanings.
+
+This is called:
+
+# Distributional Hypothesis
+
+Example:
+
+```text
+I drink coffee every morning
+I drink tea every morning
+```
+
+Because:
+
+* coffee and tea appear in similar contexts
+
+the model learns:
+
+* coffee ≈ tea
+
+---
+
+# Word2Vec Architectures
+
+Two major architectures:
+
+1. CBOW
+2. Skip-Gram
+
+---
+
+# 1. CBOW (Continuous Bag of Words)
+
+## Idea
+
+Predict the missing target word using surrounding context.
+
+Example:
+
+```text
+I am learning _____ intelligence
+```
+
+Prediction:
+
+```text
+artificial
+```
+
+So:
+
+Context words → predict center word
+
+---
+
+## Why CBOW is useful
+
+* Faster training
+* Works well for frequent words
+
+---
+
+# 2. Skip-Gram
+
+## Idea
+
+Use one word to predict surrounding context words.
+
+Example:
+
+Input:
+
+```text
+artificial
+```
+
+Predictions:
+
+```text
+intelligence
+machine
+human
+```
+
+So:
+
+Center word → predict nearby words
+
+---
+
+## Why Skip-Gram is useful
+
+Better for:
+
+* Rare words
+* Small datasets
+
+But slower than CBOW.
+
+---
+
+# CBOW vs Skip-Gram
+
+| Feature        | CBOW        | Skip-Gram         |
+| -------------- | ----------- | ----------------- |
+| Predicts       | target word | surrounding words |
+| Speed          | faster      | slower            |
+| Rare words     | weaker      | better            |
+| Frequent words | strong      | moderate          |
+
+---
+
+# PART 4 — GloVe
+
+## Full Form
+
+Global Vectors for Word Representation
+
+Developed by:
+Stanford University
+
+---
+
+# Why GloVe Was Created
+
+Word2Vec:
+
+* only looks at local context windows
+* ignores full corpus statistics
+
+GloVe combines:
+
+* statistical information
+* matrix factorization
+* co-occurrence probabilities
+
+---
+
+# Core Idea of GloVe
+
+Build a:
+
+# Word Co-occurrence Matrix
+
+Example corpus:
+
+```text
+I love machine learning
+I love deep learning
+```
+
+Matrix idea:
+
+| Word | I | love | machine | deep | learning |
+| ---- | - | ---- | ------- | ---- | -------- |
+| I    | 0 | 2    | 1       | 1    | 2        |
+
+This stores:
+
+* how frequently words appear together.
+
+---
+
+# Main GloVe Equation
+
+w_i^T w_j + b_i + b_j = \log(X_{ij})
+
+Meaning:
+
+* dot product of word vectors should approximate log of co-occurrence count.
+
+If two words occur together often:
+
+* dot product becomes large.
+
+---
+
+# Why Log is Used
+
+Raw counts vary massively.
+
+Example:
+
+* "the" may appear millions of times
+* "transformer" may appear thousands of times
+
+Using logarithm compresses scale.
+
+---
+
+# Word2Vec vs GloVe
+
+| Feature | Word2Vec         | GloVe                |
+| ------- | ---------------- | -------------------- |
+| Type    | Predictive       | Count-based          |
+| Uses    | local context    | global statistics    |
+| Method  | neural training  | matrix factorization |
+| Speed   | generally faster | more mathematical    |
+
+---
+
+# PART 5 — Window Based Models
+
+After embeddings:
+
+```text
+word → vector
+```
+
+But real NLP tasks require context.
+
+Example:
+
+```text
+I am from France and I speak fluent _____
+```
+
+To predict:
+
+```text
+French
+```
+
+the model must remember:
+
+```text
+France
+```
+
+---
+
+# What is a Window?
+
+A fixed number of nearby words considered as context.
+
+Example:
+
+Sentence:
+
+```text
+I love machine learning very much
+```
+
+Window size = 2
+
+For word:
+
+```text
+machine
+```
+
+Context:
+
+```text
+love, learning
+```
+
+---
+
+# Limitation of Window-Based Models
+
+They only see nearby words.
+
+Cannot capture:
+
+* long-range dependencies
+
+This led to:
+
+# RNN
+
+---
+
+# PART 6 — RNN (Recurrent Neural Network)
+
+## Main Idea
+
+RNN introduces memory.
+
+Unlike traditional neural networks:
+
+* RNN remembers previous information.
+
+Used for:
+
+* text
+* speech
+* time series
+* sentiment analysis
+
+---
+
+# How RNN Works
+
+Sentence:
+
+```text
+I did not like this movie
+```
+
+The word:
+
+```text
+like
+```
+
+normally indicates positive sentiment.
+
+But:
+
+```text
+not
+```
+
+changes meaning completely.
+
+RNN solves this using memory.
+
+---
+
+# Hidden State (Memory)
+
+RNN stores previous understanding in:
+
+# Hidden State
+
+Usually represented as:
+
+```text
+h(t)
+```
+
+---
+
+# Step-by-Step Working of RNN
+
+---
+
+## Step 1 — Start Memory
+
+```text
+memory = empty
+```
+
+---
+
+## Step 2 — Read First Word
+
+Input:
+
+```text
+I
+```
+
+Memory becomes:
+
+```text
+understanding of "I"
+```
+
+---
+
+## Step 3 — Read Next Word
+
+Input:
+
+```text
+did
+```
+
+Now RNN uses:
+
+* previous memory
+* current word
+
+Memory:
+
+```text
+understanding of "I did"
+```
+
+---
+
+## Step 4 — Read "not"
+
+Now:
+
+```text
+I did not
+```
+
+Negative information is stored.
+
+---
+
+## Step 5 — Read "like"
+
+Even though:
+
+```text
+like = positive
+```
+
+RNN remembers:
+
+```text
+not
+```
+
+So prediction becomes:
+
+* negative sentiment
+
+---
+
+# RNN Formula
+
+h_t = \tanh(W_x x_t + W_h h_{t-1} + b)
+
+Where:
+
+| Symbol    | Meaning               |
+| --------- | --------------------- |
+| (x_t)     | current input         |
+| (h_{t-1}) | previous hidden state |
+| (W_x)     | input weights         |
+| (W_h)     | recurrent weights     |
+| (b)       | bias                  |
+| tanh      | activation function   |
+
+---
+
+# Important RNN Concept — Weight Sharing
+
+Same weights are reused at every timestep.
+
+This is why RNN can process variable-length sequences.
+
+---
+
+# BPTT (Backpropagation Through Time)
+
+RNN training uses:
+
+# Backpropagation Through Time
+
+Idea:
+
+* Unroll RNN across timesteps
+* Apply backpropagation over sequence
+
+---
+
+# Types of RNN
+
+---
+
+## 1. One-to-One
+
+Single input → single output
+
+Example:
+
+* image classification
+
+```text
+image → cat
+```
+
+---
+
+## 2. One-to-Many
+
+Single input → sequence output
+
+Example:
+
+* image captioning
+
+```text
+image → "A dog is running"
+```
+
+---
+
+## 3. Many-to-One
+
+Sequence input → single output
+
+Example:
+
+* sentiment analysis
+
+```text
+sentence → positive
+```
+
+---
+
+## 4. Many-to-Many
+
+Sequence input → sequence output
+
+Example:
+
+* language translation
+
+```text
+English sentence → Hindi sentence
+```
+
+---
+
+# Limitations of RNN
+
+## 1. Vanishing Gradient Problem
+
+RNN forgets old information.
+
+Difficult to remember long dependencies.
+
+Example:
+
+```text
+I grew up in France ... I speak fluent French
+```
+
+RNN may forget:
+
+```text
+France
+```
+
+---
+
+## 2. Slow Training
+
+Because words are processed sequentially.
+
+Cannot fully parallelize.
+
+---
+
+# PART 7 — Advanced RNN Variants
+
+To solve RNN limitations:
+
+---
+
+# LSTM (Long Short-Term Memory)
+
+Uses 3 gates:
+
+1. Forget Gate
+2. Input Gate
+3. Output Gate
+
+Purpose:
+
+* remember important information longer
+
+---
+
+# GRU (Gated Recurrent Unit)
+
+Simpler version of LSTM.
+
+Uses:
+
+1. Update Gate
+2. Reset Gate
+
+Faster than LSTM.
+
+---
+
+# Bidirectional RNN (BiRNN)
+
+Processes sequence:
+
+* forward
+* backward
+
+Useful when future context matters.
+
+---
+
+# Deep RNN
+
+Multiple stacked RNN layers.
+
+Captures more complex patterns.
+
+---
+
+# Most Important Exam Questions
+
+These are the questions most likely to come.
+
+## 2–3 Mark Questions
+
+* What is Word Embedding?
+* Difference between sparse and dense vectors
+* Define CBOW and Skip-Gram
+* What is hidden state in RNN?
+* Define BPTT
+* What is vanishing gradient problem?
+* Difference between LSTM and GRU
+
+---
+
+## 5–8 Mark Questions
+
+* Explain Word2Vec architecture
+* Explain CBOW vs Skip-Gram
+* Explain GloVe with equation
+* Explain RNN working with diagram
+* Explain types of RNN
+* Explain limitations of RNN
+* Explain LSTM architecture
+
+---
+
+# Final Mental Map
+
+Memorize this flow:
+
+```text
+TF-IDF fails at semantics
+        ↓
+Need semantic vectors
+        ↓
+Word Embeddings
+        ↓
+Word2Vec / GloVe
+        ↓
+Need context handling
+        ↓
+Window-based models fail
+        ↓
+RNN introduces memory
+        ↓
+RNN forgets long context
+        ↓
+LSTM / GRU solve it
+```
+
+If you want next, I can also teach:
+
+1. LSTM properly with gate-by-gate intuition
+2. GRU in depth
+3. Transformers and Attention
+4. Complete comparison table of TF-IDF vs Word2Vec vs GloVe vs RNN vs LSTM
+5. Numerical and derivation-style questions
+6. Interview-style conceptual questions
+7. Diagram-based handwritten exam answers
+8. Python implementation for all models using TensorFlow/PyTorch
